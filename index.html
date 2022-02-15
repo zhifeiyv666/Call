@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title="点名程序">
+        </title>
+        <script src="vue.js"></script>
+        <link rel="stylesheet" type="text/css" href="main.css">
+    </head>
+    <body>
+        <div id="chooseConfigDiv" display="none" onchange="importConfigFile();">
+            <input type="file" id="configFile" value="选择学生文件" />
+        </div>
+        
+        <div id="randomStudentDiv">
+            <button id="randomStudent" @click="choose()">随机选择一个学生</button>
+        </div>
+
+        <div id="studentListDiv">
+            <ul>
+                <li v-for="(student, name, index) in students" :key="student.id"  @click="choose(student);" class="student-detail">
+                  <div>
+                      <img v-bind:src="student.src">
+                      <span>姓名: {{ student.name }}</span></br>
+                      <span>学号：{{ student.id }}</span>
+                  </div>
+                </li>
+            </ul>
+        </div >
+
+        <div id="choosedStudent">
+            <div :class="{hidden: isHidden }" @click="toggle();">
+                <div class="center w-500 mt-100">
+                    <span class="tips">本次点到了 {{ name }} 同学！学号为：{{ id }}</span>
+                    <img v-bind:src="src" style="max-width: 300px">
+                </div>
+            </div>
+        </div>
+        
+        <script type="text/javascript">
+            var studentLists = [];
+            var SRC_BASE_URL = "images/";
+
+            let a = Vue.createApp({
+                data () {
+                    return {
+                        students : studentLists,
+                    }
+                },
+                methods: {
+                    choose(student) {
+                        let isHidden =  targetStudentVue.$data.isHidden;
+                        let targetStudent = student;
+                        targetStudentVue.$data.id = targetStudent.id;
+                        targetStudentVue.$data.name = targetStudent.name;
+                        targetStudentVue.$data.src = targetStudent.src;
+                        targetStudentVue.$data.isHidden = !isHidden;
+                    }
+                }
+            }).mount("#studentListDiv");
+
+            let targetStudentVue = Vue.createApp({
+                data () {
+                    return {
+                        src: "",
+                        name : "",
+                        id : "",
+                        isHidden: true
+                    }
+                },
+                methods: {
+                    toggle () {
+                        this.$data.isHidden = !this.$data.isHidden;
+                    }
+                }
+            }).mount("#choosedStudent");
+
+            Vue.createApp({
+                methods: {
+                    choose() {
+                        let targetId = Math.floor(Math.random() * studentLists.length);
+                        let isHidden =  targetStudentVue.$data.isHidden;
+                        let targetStudent = getStudent(targetId);
+                        targetStudentVue.$data.id = targetStudent.id;
+                        targetStudentVue.$data.name = targetStudent.name;
+                        targetStudentVue.$data.src = targetStudent.src;
+                        targetStudentVue.$data.isHidden = !isHidden;
+                    }
+                }
+            }).mount('#randomStudentDiv');
+
+            function getStudent(idx) {
+                return studentLists[idx];
+            }
+
+            function importConfigFile() {
+                let file = document.getElementById("configFile").files[0];
+                let reader = new FileReader();
+                reader.onload = function() {
+                    let configString = this.result;
+                    let studentStrings = configString.split("\r\n");
+                    studentStrings = studentStrings.slice(1);
+                    for (let i =0; i < studentStrings.length; i ++) {
+                        let ss = studentStrings[i].split(",");
+                        if (ss.length < 3) {
+                            console.log("第" + (i + 1) + "行配置错误，不足三列，请检查：" + studentStrings[i])
+                            continue;
+                        }
+                        let id = ss[0].trim();
+                        let name = ss[1].trim();
+                        let src = SRC_BASE_URL + ss[2].trim();
+                        a.$data.students.push({
+                            id, name, src
+                        });
+                    }
+                }
+                reader.readAsText(file, ['utf-8']);
+            }
+            
+        </script>
+    </body>
+</html>
